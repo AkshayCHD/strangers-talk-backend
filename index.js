@@ -10,7 +10,9 @@ const server = app.listen(PORT, () => {
 const io = socket(server);
 
 // store connections of all active sockets
-let allUsers = [];
+let allUsers = {};
+// store room addresses for all sockets
+let rooms = {};
 // store sockets that haven't been paired
 let queue = [];
 
@@ -24,12 +26,21 @@ const removeSocketFromQueue = (socketId) => {
 }
 
 const createRoomForIdleSockets = (socket) => {
+	if(socket === undefined) {
+		return
+	}
 	if(queue.length > 0) {
+		if(queue[0].id == socket.id) {
+			return;
+		}
 		let peer = queue.pop();
 		let room = socket.id + "#" + peer.id;
 
 		peer.join(room);
 		socket.join(room);
+
+		rooms[peer.id] = room;
+		rooms[socket.id] = room;
 
 		peer.emit('roomCreated', {'room': room});
 		socket.emit('roomCreated', {'room': room});
@@ -47,8 +58,25 @@ io.on('connection', (socket) => {
 		createRoomForIdleSockets(socket);
 	});
 
+	// disconnect user from the platform
 	socket.on('disconnect', () => {
 		console.log(`Connection Closed with ${socket.id}`)
 		removeSocketFromQueue(socket.id)
+
+		let room = rooms[socket.id];
+		if(room !== undefined) {
+			let peerID = room.split('#');
+			if(io.sockets.sockets[peerID[0]]) {
+					io.sockets.sockets[peerID[0]].leave(rooms[peerID[0]])
+					removeSocketFromQueue(peerID[0])
+			}
+			if(io.sockets.sockets[peerID[1]]) {
+					io.sockets.sockets[peerID[1]].leave(rooms[peerID[1]])
+					removeSocketFromQueue(peerID[1])
+			}
+
+			delete rooms[socket.id]
+			delete allUsers[socket.id]
+		}
 	});
 })
