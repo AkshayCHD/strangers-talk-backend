@@ -29,4 +29,15 @@ describe('Suite of unit tests', () => {
 			}
 			done();
 	});
+
+	describe('Login Test Cases', function(done) {
+		it('Connect a single socket client', (done) => {
+			socket1.emit("login");
+			socket1.on("addedToQueue", (data) => {
+
+				expect(data.index).to.be.equal(1);
+				done();
+			})
+		})
+	});
 });
