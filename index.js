@@ -19,7 +19,7 @@ let queue = [];
 
 const removeSocketFromQueue = (socketId) => {
 	if(queue[0] !== undefined) {
-			if(queue[0].id === socket.Id) {
+			if(queue[0].id === socketId) {
 					queue.pop();
 			}
 	}
@@ -55,6 +55,7 @@ io.on('connection', (socket) => {
 	// login user to the platform
 	socket.on('login', () => {
 		allUsers[socket.id] = socket;
+		removeSocketFromQueue(socket.id)
 		createRoomForIdleSockets(socket);
 	});
 
@@ -95,7 +96,8 @@ io.on('connection', (socket) => {
 					io.sockets.sockets[peerID[1]].leave(rooms[peerID[1]])
 					removeSocketFromQueue(peerID[1])
 			}
-
+			peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
+			createRoomForIdleSockets(allUsers[peerID]);
 			delete rooms[socket.id]
 			delete allUsers[socket.id]
 		}
