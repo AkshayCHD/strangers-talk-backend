@@ -40,18 +40,18 @@ describe('Suite of unit tests', () => {
 
 	afterEach((done) => {
 			if(socket1.connected) {
-					console.log('disconnecting...');
-					socket1.disconnect();
-			} else {
-					console.log('no connection to break...');
-			}
-			if(socket2.connected) {
 				console.log('disconnecting...');
-				socket2.disconnect();
-			} else {
-					console.log('no connection to break...');
+				socket1.disconnect();
+				done();
 			}
+	});
+
+	afterEach((done) => {
+		if(socket2.connected) {
+			console.log('disconnecting...');
+			socket1.disconnect();
 			done();
+		}
 	});
 
 	describe('Login Test Cases', () => {

@@ -14,6 +14,15 @@ let allUsers = [];
 // store sockets that haven't been paired
 let queue = [];
 
+
+const removeSocketFromQueue = (socketId) => {
+	if(queue[0] !== undefined) {
+			if(queue[0].id === socket.Id) {
+					queue.pop();
+			}
+	}
+}
+
 const createRoomForIdleSockets = (socket) => {
 	if(queue.length > 0) {
 		let peer = queue.pop();
@@ -36,5 +45,10 @@ io.on('connection', (socket) => {
 	socket.on('login', () => {
 		allUsers[socket.id] = socket;
 		createRoomForIdleSockets(socket);
+	});
+
+	socket.on('disconnect', () => {
+		console.log(`Connection Closed with ${socket.id}`)
+		removeSocketFromQueue(socket.id)
 	});
 })
