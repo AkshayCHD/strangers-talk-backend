@@ -14,13 +14,27 @@ let allUsers = [];
 // store sockets that haven't been paired
 let queue = [];
 
-io.on('connection',  (socket) => {
+const createRoomForIdleSockets = (socket) => {
+	if(queue.length > 0) {
+		let peer = queue.pop();
+		let room = socket.id + "#" + peer.id;
+
+		peer.join(room);
+		socket.join(room);
+
+		peer.emit('roomCreated', {'room': room});
+		socket.emit('roomCreated', {'room': room});
+	} else {
+		queue.push(socket)
+		socket.emit('addedToQueue', {'index': queue.length})
+	}
+}
+io.on('connection', (socket) => {
 	console.log(`Connection Established with ${socket.id}`)
 
 	// login user to the platform
-	socket.on('login', function (data) {
+	socket.on('login', () => {
 		allUsers[socket.id] = socket;
-		queue.push(socket.id)
-		socket.emit('addedToQueue', {'index': queue.length})
+		createRoomForIdleSockets(socket);
 	});
 })
