@@ -71,5 +71,17 @@ describe('Suite of unit tests', () => {
 			})
 		});
 	});
+	describe('Logout Test Cases', function(done) {
+
+		it('Add socket to queue if partner exits', (done) => {
+				socket1.emit("login")
+				socket2.emit("login")
+				socket2.on("addedToQueue", (data) => {
+					expect(data.index).to.be.equal(1);
+					done();
+				})
+				socket1.emit("logout")
+		});
+	})
 
 });

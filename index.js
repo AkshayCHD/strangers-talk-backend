@@ -58,6 +58,16 @@ io.on('connection', (socket) => {
 		createRoomForIdleSockets(socket);
 	});
 
+	socket.on('logout', function () {
+		removeSocketFromQueue(socket.id)
+		let room = rooms[socket.id];
+		if(room) {
+				let peerID = room.split('#');
+				peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
+				createRoomForIdleSockets(allUsers[peerID]);
+		}
+	});
+
 	// disconnect user from the platform
 	socket.on('disconnect', () => {
 		console.log(`Connection Closed with ${socket.id}`)
