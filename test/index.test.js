@@ -84,7 +84,7 @@ describe('Suite of unit tests', () => {
 				socket1.emit("logout")
 		});
 
-		it('Delete room when someone logs out', (done) => {
+		it('Delete room when you log out', (done) => {
 			socket1.emit("login")
 			socket2.emit("login")
 			socket1.on("roomDeleted", (data) => {
@@ -92,6 +92,16 @@ describe('Suite of unit tests', () => {
 				done();
 			})
 			socket1.emit("logout")
+		});
+
+		it('Delete room when pair logs out', (done) => {
+			socket1.emit("login")
+			socket2.emit("login")
+			socket1.on("roomDeleted", (data) => {
+				expect(data.room).to.be.equal(socket2.id.toString() + "#" + socket1.id.toString());
+				done();
+			})
+			socket2.emit("logout")
 		});
 
 		it('Rejoin other random socket if current pair logs out', (done) => {

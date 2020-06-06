@@ -19,9 +19,9 @@ let queue = [];
 
 const removeSocketFromQueue = (socketId) => {
 	if(queue[0] !== undefined) {
-			if(queue[0].id === socketId) {
-					queue.pop();
-			}
+		if(queue[0].id === socketId) {
+				queue.pop();
+		}
 	}
 }
 
@@ -70,12 +70,15 @@ io.on('connection', (socket) => {
 					removeSocketFromQueue(socket.id)
 				}
 				if(io.sockets.sockets[peerID] !== undefined) {
-						io.sockets.sockets[peerID].leave(rooms[peerID])
-						removeSocketFromQueue(peerID)
+					io.sockets.sockets[peerID].leave(rooms[peerID])
+					removeSocketFromQueue(peerID)
 				}
 				delete rooms[socket.id]
 				delete allUsers[socket.id]
 				socket.emit("roomDeleted", {'room': room})
+				if(allUsers[peerID] !== undefined) {
+					allUsers[peerID].emit("roomDeleted", { 'room': room })
+				}
 				createRoomForIdleSockets(allUsers[peerID]);
 		}
 	});
@@ -89,17 +92,21 @@ io.on('connection', (socket) => {
 		if(room !== undefined) {
 			let peerID = room.split('#');
 			if(io.sockets.sockets[peerID[0]]) {
-					io.sockets.sockets[peerID[0]].leave(rooms[peerID[0]])
-					removeSocketFromQueue(peerID[0])
+				io.sockets.sockets[peerID[0]].leave(rooms[peerID[0]])
+				removeSocketFromQueue(peerID[0])
 			}
 			if(io.sockets.sockets[peerID[1]]) {
-					io.sockets.sockets[peerID[1]].leave(rooms[peerID[1]])
-					removeSocketFromQueue(peerID[1])
+				io.sockets.sockets[peerID[1]].leave(rooms[peerID[1]])
+				removeSocketFromQueue(peerID[1])
 			}
 			peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
-			createRoomForIdleSockets(allUsers[peerID]);
 			delete rooms[socket.id]
 			delete allUsers[socket.id]
+			socket.emit("roomDeleted", {'room': room})
+			if(allUsers[peerID] !== undefined) {
+				allUsers[peerID].emit("roomDeleted", { 'room': room })
+			}
+			createRoomForIdleSockets(allUsers[peerID]);
 		}
 	});
 })
