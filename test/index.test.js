@@ -71,7 +71,7 @@ describe('Suite of unit tests', () => {
 			})
 		});
 	});
-	describe('Logout Test Cases', function(done) {
+	describe('Logout Test Cases', () => {
 
 		it('Add socket to queue if partner exits', (done) => {
 				socket1.emit("login")
@@ -82,6 +82,15 @@ describe('Suite of unit tests', () => {
 				})
 				socket1.emit("logout")
 		});
-	})
 
+		it('Delete room when someone logs out', (done) => {
+			socket1.emit("login")
+			socket2.emit("login")
+			socket1.on("roomDeleted", (data) => {
+				expect(data.room).to.be.equal(socket2.id.toString() + "#" + socket1.id.toString());
+				done();
+			})
+			socket1.emit("logout")
+		});
+	});
 });
