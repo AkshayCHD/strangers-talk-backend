@@ -49,6 +49,31 @@ const createRoomForIdleSockets = (socket) => {
 		socket.emit('addedToQueue', {'index': queue.length})
 	}
 }
+
+const handleUserInactivity = (socket) => {
+	removeSocketFromQueue(socket.id)
+	let room = rooms[socket.id];
+	if(room) {
+			let peerID = room.split('#');
+			peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
+			if(io.sockets.sockets[socket.id] !== undefined) {
+				io.sockets.sockets[socket.id].leave(rooms[socket.id])
+				removeSocketFromQueue(socket.id)
+			}
+			if(io.sockets.sockets[peerID] !== undefined) {
+				io.sockets.sockets[peerID].leave(rooms[peerID])
+				removeSocketFromQueue(peerID)
+			}
+			delete rooms[socket.id]
+			delete allUsers[socket.id]
+			socket.emit("roomDeleted", {'room': room})
+			if(allUsers[peerID] !== undefined) {
+				allUsers[peerID].emit("roomDeleted", { 'room': room })
+			}
+			createRoomForIdleSockets(allUsers[peerID]);
+	}
+}
+
 io.on('connection', (socket) => {
 	console.log(`Connection Established with ${socket.id}`)
 
@@ -59,54 +84,13 @@ io.on('connection', (socket) => {
 		createRoomForIdleSockets(socket);
 	});
 
+	// logout user from the platform
 	socket.on('logout', () => {
-		removeSocketFromQueue(socket.id)
-		let room = rooms[socket.id];
-		if(room) {
-				let peerID = room.split('#');
-				peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
-				if(io.sockets.sockets[socket.id] !== undefined) {
-					io.sockets.sockets[socket.id].leave(rooms[socket.id])
-					removeSocketFromQueue(socket.id)
-				}
-				if(io.sockets.sockets[peerID] !== undefined) {
-					io.sockets.sockets[peerID].leave(rooms[peerID])
-					removeSocketFromQueue(peerID)
-				}
-				delete rooms[socket.id]
-				delete allUsers[socket.id]
-				socket.emit("roomDeleted", {'room': room})
-				if(allUsers[peerID] !== undefined) {
-					allUsers[peerID].emit("roomDeleted", { 'room': room })
-				}
-				createRoomForIdleSockets(allUsers[peerID]);
-		}
+		handleUserInactivity(socket)
 	});
 
 	// disconnect user from the platform
 	socket.on('disconnect', () => {
-		console.log(`Connection Closed with ${socket.id}`)
-		removeSocketFromQueue(socket.id)
-
-		let room = rooms[socket.id];
-		if(room !== undefined) {
-			let peerID = room.split('#');
-			if(io.sockets.sockets[peerID[0]]) {
-				io.sockets.sockets[peerID[0]].leave(rooms[peerID[0]])
-				removeSocketFromQueue(peerID[0])
-			}
-			if(io.sockets.sockets[peerID[1]]) {
-				io.sockets.sockets[peerID[1]].leave(rooms[peerID[1]])
-				removeSocketFromQueue(peerID[1])
-			}
-			peerID = peerID[0] === socket.id ? peerID[1] : peerID[0];
-			delete rooms[socket.id]
-			delete allUsers[socket.id]
-			socket.emit("roomDeleted", {'room': room})
-			if(allUsers[peerID] !== undefined) {
-				allUsers[peerID].emit("roomDeleted", { 'room': room })
-			}
-			createRoomForIdleSockets(allUsers[peerID]);
-		}
+		handleUserInactivity(socket)
 	});
 })
